@@ -100,7 +100,7 @@ export function Hero() {
           Premium roofing, gutters, and siding solutions for Austin homeowners. Quality craftsmanship you can trust.
         </p>
 
-        <div style={{
+        <div className="hero__ctas" style={{
           display: "flex",
           gap: "1rem",
           flexWrap: "wrap",

@@ -277,3 +277,217 @@
     padding-right: 1.25rem;
   }
 }
+
+@media (max-width: 768px) {
+  /* Header */
+  .header__nav-desktop {
+    display: none !important;
+  }
+  .header__burger {
+    display: flex !important;
+  }
+  .header__cta-desktop {
+    display: none !important;
+  }
+  .header__socials-desktop {
+    display: none !important;
+  }
+
+  /* Hero */
+  .hero__content {
+    margin-left: 0 !important;
+    padding-bottom: 3rem !important;
+    max-width: 100% !important;
+  }
+  .hero {
+    min-height: 550px !important;
+  }
+  .hero__scroll-indicator {
+    bottom: 1.25rem !important;
+  }
+
+  /* Trust Bar */
+  .trust-bar {
+    padding: 0.8rem 0 !important;
+  }
+  .trust-bar__inner {
+    gap: 1.25rem !important;
+    justify-content: flex-start !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+  .trust-bar__inner::-webkit-scrollbar {
+    display: none !important;
+  }
+  .trust-bar__item {
+    font-size: 0.68rem !important;
+    gap: 0.35rem !important;
+  }
+  .trust-bar__item svg {
+    width: 15px !important;
+    height: 15px !important;
+  }
+  .trust-bar__divider {
+    height: 16px !important;
+  }
+
+  /* Showreel */
+  .showreel {
+    padding: 2.5rem 0 !important;
+  }
+  .showreel__layout {
+    grid-template-columns: 1fr !important;
+    gap: 1.25rem !important;
+  }
+  .showreel__video-wrap {
+    width: 100% !important;
+    border-radius: 10px !important;
+  }
+  .showreel__video-wrap video {
+    aspect-ratio: auto !important;
+    height: 200px !important;
+    width: 100% !important;
+    object-fit: cover !important;
+  }
+  .showreel__title {
+    font-size: 1.35rem !important;
+    margin-bottom: 10px !important;
+  }
+  .showreel__desc {
+    font-size: 0.88rem !important;
+    margin-bottom: 20px !important;
+    max-width: 100% !important;
+    line-height: 1.6 !important;
+  }
+
+  /* Why Us */
+  .why-hugo__layout {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+  }
+  .why-hugo__left {
+    position: relative !important;
+    top: 0 !important;
+  }
+
+  /* Gallery */
+  .gallery__grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Follow Us */
+  .follow-us__grid {
+    grid-template-columns: 1fr !important;
+    max-width: 400px !important;
+  }
+
+  /* CTA Contact */
+  .cta-contact__layout {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+  }
+
+  /* Footer */
+  .footer__grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 2rem !important;
+  }
+
+  /* Testimonials carousel cards */
+  .testimonial-card {
+    flex: 0 0 280px !important;
+  }
+
+  /* Services section on mobile */
+  .services__arrow {
+    width: 40px !important;
+    height: 40px !important;
+    left: 8px !important;
+  }
+  .services__arrow-right {
+    right: 8px !important;
+  }
+  .services .container {
+    padding-top: clamp(5rem, 12vw, 7rem) !important;
+    padding-bottom: clamp(5rem, 12vw, 7rem) !important;
+    padding-left: 3rem !important;
+    padding-right: 3rem !important;
+  }
+  .services__slider {
+    min-height: 70vh !important;
+  }
+
+  /* Why Us */
+  .why-hugo {
+    padding: 3rem 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  /* Gallery single column */
+  .gallery__grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Footer stack */
+  .footer__grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Hero CTA stack */
+  .hero__ctas {
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+  .hero__ctas a {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  .hero__scroll-indicator {
+    bottom: 1rem !important;
+  }
+  .hero__content {
+    padding-bottom: 2.5rem !important;
+  }
+
+  /* Section header smaller */
+  .section-title {
+    font-size: clamp(1.5rem, 6vw, 2rem) !important;
+  }
+
+  /* Services heading */
+  .services__heading {
+    padding: 10px 16px !important;
+  }
+  .services__heading h2 {
+    font-size: clamp(1.2rem, 5vw, 1.5rem) !important;
+  }
+
+  /* Testimonials tighter */
+  .testimonial-card {
+    flex: 0 0 260px !important;
+    padding: 1.25rem !important;
+  }
+
+  /* Showreel tighter */
+  .showreel {
+    padding: 1.5rem 0 !important;
+  }
+  .showreel__layout {
+    gap: 1rem !important;
+  }
+  .showreel__video-wrap video {
+    height: 170px !important;
+  }
+
+  /* Why Us */
+  .why-hugo {
+    padding: 2rem 0 !important;
+  }
+}

@@ -60,6 +60,7 @@ export function Services() {
     }}>
       {/* Full-width sliding image container */}
       <div
+        className="services__slider"
         onMouseEnter={stopAuto}
         onMouseLeave={startAuto}
         style={{
@@ -105,6 +106,7 @@ export function Services() {
 
         {/* Arrows */}
         <button
+          className="services__arrow"
           onClick={() => goTo((active - 1 + services.length) % services.length)}
           style={{
             position: "absolute",
@@ -133,6 +135,7 @@ export function Services() {
           </svg>
         </button>
         <button
+          className="services__arrow services__arrow-right"
           onClick={() => goTo((active + 1) % services.length)}
           style={{
             position: "absolute",
@@ -172,7 +175,7 @@ export function Services() {
           justifyContent: "center",
         }}>
           {/* Heading with white bg */}
-          <div style={{
+          <div className="services__heading" style={{
             alignSelf: "flex-start",
             background: "#fff",
             borderRadius: 8,

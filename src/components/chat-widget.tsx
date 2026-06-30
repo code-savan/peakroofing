@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { RoofLogo } from '@/components/roof-logo'
 
 const WEBHOOK_URL = 'https://n8n.hermes-codesavan.xyz/webhook/chat-demo'
@@ -16,17 +16,42 @@ const faqQuestions = [
   "Do you offer financing?",
 ]
 
+const teaserMessages = [
+  "Need a roof estimate? We reply fast!",
+  "Free inspections available today!",
+  "Roof leak? We're here to help!",
+  "Ask us about financing options!",
+  "Get a free quote in seconds!",
+]
+
+function detectContactForm(text: string): boolean {
+  const lower = text.toLowerCase()
+  const hasName = lower.includes('name')
+  const hasPhone = lower.includes('phone') || lower.includes('number') || lower.includes('digits')
+  return hasName && hasPhone
+}
+
 export default function ChatWidget() {
   const [open, setOpen] = useState(false)
-  const [showBadge, setShowBadge] = useState(false)
+  const [badgeMessage, setBadgeMessage] = useState<string | null>(null)
+  const [badgeVisible, setBadgeVisible] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
     { role: 'bot', text: "Hi! I'm Peak's AI assistant. Ask me anything about roofing, gutters, or siding." }
   ])
   const [showFaq, setShowFaq] = useState(true)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [contactFormName, setContactFormName] = useState('')
+  const [contactFormPhone, setContactFormPhone] = useState('')
+  const [sendingContact, setSendingContact] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const badgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const badgeCycleRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const teaserIndexRef = useRef(0)
+
+  // Track last message index that had a contact form shown
+  const [contactFormShownForIndex, setContactFormShownForIndex] = useState<number | null>(null)
 
   useEffect(() => {
     if (open) {
@@ -34,14 +59,46 @@ export default function ChatWidget() {
     }
   }, [open])
 
+  // Looping badge teaser messages
   useEffect(() => {
-    const show = setTimeout(() => setShowBadge(true), 2000)
-    const hide = setTimeout(() => setShowBadge(false), 8000)
-    return () => { clearTimeout(show); clearTimeout(hide) }
+    function showNextTeaser() {
+      setBadgeMessage(teaserMessages[teaserIndexRef.current % teaserMessages.length])
+      setBadgeVisible(true)
+      teaserIndexRef.current++
+
+      if (badgeTimerRef.current) clearTimeout(badgeTimerRef.current)
+      badgeTimerRef.current = setTimeout(() => {
+        setBadgeVisible(false)
+        badgeTimerRef.current = setTimeout(() => {
+          showNextTeaser()
+        }, 3000)
+      }, 4000)
+    }
+
+    const initialDelay = setTimeout(() => {
+      showNextTeaser()
+    }, 2000)
+
+    return () => {
+      clearTimeout(initialDelay)
+      if (badgeTimerRef.current) clearTimeout(badgeTimerRef.current)
+      if (badgeCycleRef.current) clearInterval(badgeCycleRef.current)
+    }
   }, [])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  // Check the last bot message for contact form trigger
+  useEffect(() => {
+    if (messages.length > 0) {
+      const last = messages[messages.length - 1]
+      if (last.role === 'bot' && detectContactForm(last.text)) {
+        const msgIndex = messages.length - 1
+        setContactFormShownForIndex(msgIndex)
+      }
+    }
   }, [messages])
 
   async function handleSend(text: string) {
@@ -70,6 +127,34 @@ export default function ChatWidget() {
     setLoading(false)
   }
 
+  async function handleContactSubmit() {
+    if (!contactFormName.trim() || !contactFormPhone.trim() || sendingContact) return
+    setSendingContact(true)
+    const payload = `Name: ${contactFormName.trim()}\nPhone: ${contactFormPhone.trim()}`
+    setMessages(prev => [...prev, { role: 'user', text: payload }])
+    setContactFormName('')
+    setContactFormPhone('')
+    setContactFormShownForIndex(null)
+    try {
+      const res = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: payload })
+      })
+      const data = await res.json()
+      setMessages(prev => [...prev, {
+        role: 'bot',
+        text: data.response || 'Thanks! A team member will reach out shortly.'
+      }])
+    } catch {
+      setMessages(prev => [...prev, {
+        role: 'bot',
+        text: "Thanks! We'll contact you soon at the number provided."
+      }])
+    }
+    setSendingContact(false)
+  }
+
   return (
     <>
       <style>{`
@@ -77,10 +162,14 @@ export default function ChatWidget() {
           from { opacity: 0; transform: translateX(16px) scale(0.9); }
           to { opacity: 1; transform: translateX(0) scale(1); }
         }
+        @keyframes badgeFadeOut {
+          from { opacity: 1; transform: translateX(0) scale(1); }
+          to { opacity: 0; transform: translateX(16px) scale(0.9); }
+        }
       `}</style>
 
-      {/* Floating Badge */}
-      {showBadge && !open && (
+      {/* Floating Teaser Badge */}
+      {badgeMessage && !open && (
         <div
           style={{
             position: 'fixed',
@@ -89,49 +178,63 @@ export default function ChatWidget() {
             zIndex: 50,
             background: '#fff',
             color: '#0d0d0d',
-            padding: '8px 16px',
+            padding: '10px 18px',
             borderRadius: 12,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
             fontSize: 13,
             fontWeight: 600,
             fontFamily: "'Barlow Condensed', sans-serif",
             letterSpacing: '0.02em',
-            animation: 'badgeFadeIn 0.5s cubic-bezier(0.16,1,0.3,1)',
+            animation: badgeVisible ? 'badgeFadeIn 0.4s cubic-bezier(0.16,1,0.3,1)' : 'badgeFadeOut 0.3s ease forwards',
             pointerEvents: 'none',
             whiteSpace: 'nowrap',
+            border: '1px solid rgba(0,0,0,0.06)',
           }}
         >
-          <div style={{ position: 'absolute', bottom: -6, right: 20, width: 12, height: 12, background: '#fff', transform: 'rotate(45deg)', borderRadius: 2 }} />
+          <div style={{ position: 'absolute', bottom: -6, right: 20, width: 12, height: 12, background: '#fff', transform: 'rotate(45deg)', borderRadius: 2, borderRight: '1px solid rgba(0,0,0,0.06)', borderBottom: '1px solid rgba(0,0,0,0.06)' }} />
           <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />
-            &ldquo;We reply in seconds&rdquo;
+            {badgeMessage}
           </span>
         </div>
       )}
 
-      {/* Chat Button */}
+      {/* Chat Button - perfect circle */}
       <button
         onClick={() => setOpen(!open)}
+        aria-label="Toggle chat"
         style={{
           position: 'fixed',
           bottom: 24,
           right: 24,
           zIndex: 50,
-          width: 56,
-          height: 56,
-          borderRadius: 16,
-          backgroundColor: open ? '#0d0d0d' : '#0d0d0d',
+          width: 58,
+          height: 58,
+          borderRadius: '50%',
+          backgroundColor: open ? '#0d0d0d' : '#c8102e',
           color: '#fff',
-          boxShadow: '0 6px 24px rgba(0,0,0,0.25)',
+          boxShadow: open
+            ? '0 6px 24px rgba(0,0,0,0.3)'
+            : '0 6px 24px rgba(200,16,46,0.4), 0 0 0 3px rgba(200,16,46,0.2)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          border: 'none',
+          border: open ? '2px solid rgba(255,255,255,0.2)' : '2px solid rgba(255,255,255,0.3)',
           cursor: 'pointer',
           transition: 'all 0.3s cubic-bezier(0.16,1,0.3,1)',
         }}
-        onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.35)' }}
-        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(0,0,0,0.25)' }}
+        onMouseEnter={e => {
+          e.currentTarget.style.transform = 'scale(1.08)'
+          e.currentTarget.style.boxShadow = open
+            ? '0 8px 32px rgba(0,0,0,0.35)'
+            : '0 8px 32px rgba(200,16,46,0.5), 0 0 0 4px rgba(200,16,46,0.25)'
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.transform = 'scale(1)'
+          e.currentTarget.style.boxShadow = open
+            ? '0 6px 24px rgba(0,0,0,0.3)'
+            : '0 6px 24px rgba(200,16,46,0.4), 0 0 0 3px rgba(200,16,46,0.2)'
+        }}
       >
         {open ? (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -243,23 +346,107 @@ export default function ChatWidget() {
             background: '#f8f8fa',
           }}>
             {messages.map((msg, i) => (
-              <div
-                key={i}
-                style={{
-                  maxWidth: '85%',
-                  padding: '10px 16px',
-                  borderRadius: msg.role === 'bot' ? '14px 14px 14px 4px' : '14px 14px 4px 14px',
-                  fontSize: 13.5,
-                  lineHeight: 1.55,
-                  color: msg.role === 'bot' ? '#1a1a1a' : '#fff',
-                  background: msg.role === 'bot' ? '#fff' : '#0d0d0d',
-                  boxShadow: msg.role === 'bot' ? '0 1px 4px rgba(0,0,0,0.04)' : '0 2px 8px rgba(0,0,0,0.15)',
-                  alignSelf: msg.role === 'bot' ? 'flex-start' : 'flex-end',
-                  animation: 'chatFadeIn 0.25s cubic-bezier(0.16,1,0.3,1)',
-                  whiteSpace: 'pre-wrap',
-                }}
-              >
-                {msg.text}
+              <div key={i}>
+                <div
+                  style={{
+                    maxWidth: '85%',
+                    padding: '10px 16px',
+                    borderRadius: msg.role === 'bot' ? '14px 14px 14px 4px' : '14px 14px 4px 14px',
+                    fontSize: 13.5,
+                    lineHeight: 1.55,
+                    color: msg.role === 'bot' ? '#1a1a1a' : '#fff',
+                    background: msg.role === 'bot' ? '#fff' : '#0d0d0d',
+                    boxShadow: msg.role === 'bot' ? '0 1px 4px rgba(0,0,0,0.04)' : '0 2px 8px rgba(0,0,0,0.15)',
+                    alignSelf: msg.role === 'bot' ? 'flex-start' : 'flex-end',
+                    animation: 'chatFadeIn 0.25s cubic-bezier(0.16,1,0.3,1)',
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
+                  {msg.text}
+                </div>
+
+                {/* Contact Form Below Bot Message */}
+                {msg.role === 'bot' && contactFormShownForIndex === i && (
+                  <div
+                    style={{
+                      marginTop: 10,
+                      background: '#fff',
+                      borderRadius: 14,
+                      padding: 14,
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                      border: '1px solid rgba(0,0,0,0.06)',
+                      maxWidth: '85%',
+                    }}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <input
+                        type="text"
+                        value={contactFormName}
+                        onChange={e => setContactFormName(e.target.value)}
+                        placeholder="Your name"
+                        style={{
+                          fontSize: 13,
+                          padding: '10px 12px',
+                          border: '1px solid rgba(0,0,0,0.12)',
+                          borderRadius: 10,
+                          background: '#f8f8fa',
+                          color: '#1a1a1a',
+                          outline: 'none',
+                          fontFamily: 'inherit',
+                          width: '100%',
+                          boxSizing: 'border-box',
+                          transition: 'border-color 0.2s, background 0.2s',
+                        }}
+                        onFocus={e => { e.target.style.borderColor = '#c8102e'; e.target.style.background = '#fff' }}
+                        onBlur={e => { e.target.style.borderColor = 'rgba(0,0,0,0.12)'; e.target.style.background = '#f8f8fa' }}
+                      />
+                      <input
+                        type="tel"
+                        value={contactFormPhone}
+                        onChange={e => setContactFormPhone(e.target.value)}
+                        placeholder="Phone number"
+                        style={{
+                          fontSize: 13,
+                          padding: '10px 12px',
+                          border: '1px solid rgba(0,0,0,0.12)',
+                          borderRadius: 10,
+                          background: '#f8f8fa',
+                          color: '#1a1a1a',
+                          outline: 'none',
+                          fontFamily: 'inherit',
+                          width: '100%',
+                          boxSizing: 'border-box',
+                          transition: 'border-color 0.2s, background 0.2s',
+                        }}
+                        onFocus={e => { e.target.style.borderColor = '#c8102e'; e.target.style.background = '#fff' }}
+                        onBlur={e => { e.target.style.borderColor = 'rgba(0,0,0,0.12)'; e.target.style.background = '#f8f8fa' }}
+                      />
+                      <button
+                        onClick={handleContactSubmit}
+                        disabled={!contactFormName.trim() || !contactFormPhone.trim() || sendingContact}
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          fontFamily: "'Barlow Condensed', sans-serif",
+                          letterSpacing: '0.08em',
+                          padding: '10px 0',
+                          background: !contactFormName.trim() || !contactFormPhone.trim() || sendingContact ? '#e5e7eb' : '#c8102e',
+                          color: !contactFormName.trim() || !contactFormPhone.trim() || sendingContact ? '#9ca3af' : '#fff',
+                          border: 'none',
+                          borderRadius: 10,
+                          cursor: !contactFormName.trim() || !contactFormPhone.trim() || sendingContact ? 'not-allowed' : 'pointer',
+                          width: '100%',
+                          textTransform: 'uppercase',
+                          transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={e => { if (contactFormName.trim() && contactFormPhone.trim() && !sendingContact) e.currentTarget.style.background = '#a00d24' }}
+                        onMouseLeave={e => { if (contactFormName.trim() && contactFormPhone.trim() && !sendingContact) e.currentTarget.style.background = '#c8102e' }}
+                      >
+                        {sendingContact ? 'Sending...' : 'Send'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
 
