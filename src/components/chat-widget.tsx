@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { RoofLogo } from '@/components/roof-logo'
+
 
 const WEBHOOK_URL = 'https://n8n.hermes-codesavan.xyz/webhook/chat-demo'
 
@@ -36,7 +36,7 @@ export default function ChatWidget() {
   const [badgeMessage, setBadgeMessage] = useState<string | null>(null)
   const [badgeVisible, setBadgeVisible] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'bot', text: "Hi! I'm Peak's AI assistant. Ask me anything about roofing, gutters, or siding." }
+    { role: 'bot', text: "Hey! I'm Cole from Peak Roofing. What can I help you with today — repair, replacement, or just want a free inspection?" }
   ])
   const [showFaq, setShowFaq] = useState(true)
   const [input, setInput] = useState('')
@@ -283,51 +283,14 @@ export default function ChatWidget() {
           `}</style>
 
           {/* Header */}
-          <div style={{
-            background: '#0d0d0d',
-            padding: '16px 20px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            flexShrink: 0,
-          }}>
-            <div style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              background: 'rgba(255,255,255,0.08)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <RoofLogo color="#fff" edgeColor="#fff" />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600, fontSize: 14, color: '#fff', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.03em' }}>
-                Peak Roofing
-              </div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />
-                Cole J.
-              </div>
+          <div className="bg-black text-white px-5 py-4 flex items-center justify-between flex-shrink-0">
+            <div>
+              <div className="font-bold text-base">Cole J. — Peak Roofing</div>
+              <div className="text-xs opacity-75 mt-0.5">🟢 Online now · Typically replies instantly</div>
             </div>
             <button
               onClick={() => setOpen(false)}
-              style={{
-                background: 'rgba(255,255,255,0.08)',
-                border: 'none',
-                borderRadius: 8,
-                width: 28,
-                height: 28,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                color: 'rgba(255,255,255,0.5)',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = '#fff' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)' }}
+              className="bg-white/10 hover:bg-white/20 border-none rounded-lg w-7 h-7 flex items-center justify-center cursor-pointer text-white/70 hover:text-white transition-all"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
